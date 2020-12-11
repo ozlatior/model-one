@@ -1,0 +1,30 @@
+{
+  "name": "model-one",
+  "version": "0.0.1",
+  "description": "Generic Relational Model Library for nodejs",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha --recursive"
+  },
+  "dependencies": {
+    "assert-one": "0.0.1-c",
+    "type-one": "*"
+  },
+  "devDependencies": {
+    "mocha": "^8.1.3"
+  },
+  "keywords": [
+    "model",
+    "relational model"
+  ],
+  "author": "Octav Zlatior",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ozlatior/model-one.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ozlatior/model-one/issues"
+  },
+  "homepage": "https://github.com/ozlatior/model-one#readme"
+}
