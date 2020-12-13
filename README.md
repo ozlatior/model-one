@@ -1,5 +1,5 @@
 ---
-ModelOne: Model and Relationship Library
+ModelOne - Model and Relationship Library
 ---
 
 ModelOne provides a way to describe models and their relationships. It's designed
