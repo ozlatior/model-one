@@ -269,7 +269,7 @@ class Relationship {
 			ret.name = this.name;
 		if (this.chain !== undefined)
 			ret.chain = this.chain;
-		ret.env = this.env;
+
 		return ret;
 	}
 
@@ -293,7 +293,6 @@ class Relationship {
 		let ind = options.indentation === undefined ? 4 : options.indentation;
 		let dpt = options.depth === undefined ? 0 : options.depth;
 		let fmt = options.format === undefined ? "explicit" : options.format;
-		let rpr = options.relationshipPrefix === undefined ? "R1R." : options.relationshipPrefix;
 		let ia = util.indentationArray(ind);
 
 		let ret = [];
