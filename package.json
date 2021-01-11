@@ -11,6 +11,7 @@
     "type-one": "*"
   },
   "devDependencies": {
+    "macronator": "^0.0.1",
     "mocha": "^8.1.3"
   },
   "keywords": [
