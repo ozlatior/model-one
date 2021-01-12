@@ -29,7 +29,9 @@ const SCHEMA = {
  * Attribute objects store and operate with information about entity attributes
  *
  * Properties
- * - `name`: string, name of this attribute (if any), eg. `price`
+ * - `name`: string, name of this attribute (if any, default `null`), eg. `price`
+ * - `modelName`: string, name of the model for this attribute (if any, default `null`)
+ * - `model`: Model object, reference to the model object for this attribute (if any, default `null`)
  * - `type`: type object, a type object for validating attribute values
  * - `notNull`: boolean, NOT NULL constraint (this value cannot be null)
  * - `primary`: boolean, PRIMARY constraint (this value is a primary key)
@@ -52,6 +54,7 @@ class Attribute {
 	 * If the argument is a template, the following fields will be reflected in the created
 	 * Attribute object:
 	 * - `name`: string, name of this attribute (optional, default: null)
+	 * - `model`: string, model name for this attribute (optional, default: null)
 	 * - `type`: type object, the type object this attribute is built around
 	 * - `notNull`: boolean, NOT NULL constraint (this value cannot be null) (optional, default: false)
 	 * - `primary`: boolean, PRIMARY constraint (this value is a primary key) (optional, default: false)
@@ -68,6 +71,9 @@ class Attribute {
 	constructor (template, name) {
 		if (template instanceof DataType) {
 			this.type = template;
+			this.name = null;
+			this.modelName = null;
+			this.model = null;
 			this.notNull = false;
 			this.primary = false;
 			this.unique = false;
@@ -80,7 +86,9 @@ class Attribute {
 			assert.fieldTypes(template, SCHEMA.TEMPLATE_FIELDS_T, AttributeError, "template", "constructor");
 			assert.optionalFieldTypes(template, SCHEMA.TEMPLATE_OPTIONAL_T, AttributeError, "template", "constructor");
 
-			this.name = template.name;
+			this.name = template.name ? template.name : null;
+			this.modelName = template.model ? template.model : null;
+			this.model = null;
 			this.type = template.type;
 			this.notNull = !!template.notNull;
 			this.primary = !!template.primary;
@@ -123,6 +131,24 @@ class Attribute {
 	 */
 	getName () {
 		return this.name;
+	}
+
+	/*
+	 * Get the model name for this Attribute
+	 *
+	 * Return: string, the model name or null if no model name has been set
+	 */
+	getModelName () {
+		return this.modelName;
+	}
+
+	/*
+	 * Get the model reference for this Attribute
+	 *
+	 * Return: Model object, the model reference or null if no model reference has been set
+	 */
+	getModel () {
+		return this.model;
 	}
 
 	/*
@@ -224,6 +250,8 @@ class Attribute {
 
 		if (this.name)
 			ret.name = this.name;
+		if (this.modelName)
+			ret.model = this.modelName;
 
 		ret.type = Attribute.formatType(this.type, format);
 		if (this.notNull)
@@ -266,6 +294,8 @@ class Attribute {
 
 		if (this.name)
 			ret.name = this.name;
+		if (this.modelName)
+			ret.model = this.modelName;
 
 		ret.type = Attribute.formatType(this.type, format);
 
