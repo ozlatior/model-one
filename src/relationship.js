@@ -170,6 +170,16 @@ class Relationship {
 	}
 
 	/*
+	 * Get relationship direction
+	 * Returns either `Relationship.FORWARD (1)` or `Relationship.REVERSE (2)`
+	 */
+	getDirection () {
+		if (this.reverse === null)
+			return Relationship.REVERSE;
+		return Relationship.FORWARD;
+	}
+
+	/*
 	 * Get environment object
 	 *
 	 * Returns: ModelOne object, environment object
@@ -323,6 +333,9 @@ Relationship.ONE_TO_ONE = 0;
 Relationship.ONE_TO_MANY = 1;
 Relationship.MANY_TO_ONE = 2;
 Relationship.MANY_TO_MANY = 3;
+
+Relationship.FORWARD = 1;
+Relationship.REVERSE = 2;
 
 /*
  * Get the string corresponding to a type id
