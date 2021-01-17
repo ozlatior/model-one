@@ -45,7 +45,7 @@ class Attribute {
 
 	/*
 	 * Creates Attribute object from template properties or type
-	 * `template`: template object or type object, properties for the relationship object
+	 * `template`: template object or type object, properties for the attribute object
 	 * `name`: string, if this is set, use this as the name instead of the one in the template (optional)
 	 *
 	 * If the argument is a type object, an attribute for this type will be created with default
@@ -87,6 +87,8 @@ class Attribute {
 			assert.optionalFieldTypes(template, SCHEMA.TEMPLATE_OPTIONAL_T, AttributeError, "template", "constructor");
 
 			this.name = template.name ? template.name : null;
+			if (name)
+				this.name = name;
 			this.modelName = template.model ? template.model : null;
 			this.model = null;
 			this.type = template.type;
@@ -241,7 +243,7 @@ class Attribute {
 	 * Export this attribute object as a template object with as little fields as possible
 	 * `format`: string, format to use for library-specific values, such as data type
 	 * - `explicit`: use string format, such as `STRING()`
-	 * - `internal`: use internal representation, usually a number or string
+	 * - `internal`: use internal representation, usually a number or serialized string
 	 * - `object`: use object representation (for export), such as `Types.STRING()`
 	 * Returns a template object with only the strictly required values
 	 */
@@ -282,11 +284,11 @@ class Attribute {
 	}
 
 	/*
-	 * Export this relationship object as a template object with all redundant fields specified
-	 * `format`: string, format to use for library-specific values, such as relationship type
-	 * - `explicit`: use string format, such as `ONE_TO_ONE"
-	 * - `internal`: use internal representation, usually a number
-	 * - `object`: use object representation (for export), such as Relationship.ONE_TO_ONE
+	 * Export this Attribute object as a template object with all redundant fields specified
+	 * `format`: string, format to use for library-specific values, such as Attribute type
+	 * - `explicit`: use string format, such as `STRING(100)`
+	 * - `internal`: use internal representation, usually a serialized string
+	 * - `object`: use object representation (for export), such as "Types.STRING(100)"
 	 * Returns a template object with all possibly defined values
 	 */
 	toCompleteTemplate (format) {
@@ -315,15 +317,15 @@ class Attribute {
 	}
 
 	/*
-	 * Export this relationship object as a template string (for file output)
+	 * Export this attribute object as a template string (for file output)
 	 * `complete`: boolean, if `true` also export redundant fields
 	 * `newLine`: boolean, if `true` format object data using new line (default: `true`)
 	 * `indentation`: number, for `newLine` formatting, indentation length for output string (default: 4)
 	 * `depth`: number, for `newLine` formatting, indentation depth to start from (default: 0)
 	 * `format`: string, format to use for defined types (relationships and data types), defaults to "explicit"
-	 * - `explicit`: use string format, such as `ONE_TO_ONE"
-	 * - `internal`: use internal representation, usually a number
-	 * - `object`: use object representation (for export), such as Relationship.ONE_TO_ONE
+	 * - `explicit`: use string format, such as `STRING(100)`
+	 * - `internal`: use internal representation, usually a number or string
+	 * - `object`: use object representation (for export), such as "Types.STRING(100)"
 	 * Returns a string containing the template representation (for file export, for instance)
 	 */
 	toTemplateString (options) {
