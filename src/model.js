@@ -73,6 +73,10 @@ class Model {
 
 		this.id = new Attribute(template.id, "id");
 		this.ownership = template.ownership ? this.attachRelationshipAsSource(template.ownership, null, "owner") : null;
+		if (this.ownership) {
+			this.ownership.chain = true;
+			this.ownership.name = "ownership";
+		}
 
 		this.attributes = {};
 		if (template.attributes) {
@@ -275,6 +279,10 @@ class Model {
 	 *                         name will not be included in the produced template (defaults to false)
 	 * - `ownershipAlias`: boolean, wether to include the default `owner` alias or not in the ownership
 	 *                     relationship template (defaults to false)
+	 * - `ownershipName`:  boolean, wether to include the default `ownership` name in the ownership
+	 *                     relationship template (defaults to false)
+	 * - `ownershipChain`: boolean, wether to include the default `chain: true` property in the ownership
+	 *                     relationship template (defaults to false)
 	 * - `emptyObjects`: boolean, wether to includ empty `attributes` and `relationships` lists; if this
 	 *                   is set to true, they will be included as empty objects / arrays (defaults to false)
 	 * Returns a template object with only the strictly required values
@@ -298,6 +306,10 @@ class Model {
 				delete ret.ownership.source;
 			if (options.ownershipAlias !== true && ret.ownership.targetAs === "owner")
 				delete ret.ownership.targetAs;
+			if (options.ownershipName !== true && ret.ownership.name === "ownership")
+				delete ret.ownership.name;
+			if (options.ownershipChain !== true && ret.ownership.chain === true)
+				delete ret.ownership.chain;
 		}
 
 		if (this.getAttributeList().length > 0 || options.emptyObjects === true)
@@ -334,6 +346,10 @@ class Model {
 	 *                         name will not be included in the produced template
 	 * - `ownershipAlias`: boolean, wether to include the default `owner` alias or not in the ownership
 	 *                     relationship template (defaults to false)
+	 * - `ownershipName`:  boolean, wether to include the default `ownership` name in the ownership
+	 *                     relationship template (defaults to false)
+	 * - `ownershipChain`: boolean, wether to include the default `chain: true` property in the ownership
+	 *                     relationship template (defaults to false)
 	 * - `emptyObjects`: boolean, wether to includ empty `attributes` and `relationships` lists; if this
 	 *                   is set to true, they will be included as empty objects / arrays (defaults to false)
 	 * Returns a template object with all possibly defined values
@@ -360,6 +376,10 @@ class Model {
 			}
 			if (options.ownershipAlias !== true && ret.ownership.targetAs === "owner")
 				delete ret.ownership.targetAs;
+			if (options.ownershipName !== true && ret.ownership.name === "ownership")
+				delete ret.ownership.name;
+			if (options.ownershipChain !== true && ret.ownership.chain === true)
+				delete ret.ownership.chain;
 		}
 
 		if (this.getAttributeList().length > 0 || options.emptyObjects === true)
@@ -395,6 +415,10 @@ class Model {
 	 *                        name will not be included in the produced template
 	 * `ownershipAlias`: boolean, wether to include the default `owner` alias or not in the ownership
 	 *                   relationship template (defaults to false)
+	 * `ownershipName`:  boolean, wether to include the default `ownership` name in the ownership
+	 *                   relationship template (defaults to false)
+	 * `ownershipChain`: boolean, wether to include the default `chain: true` property in the ownership
+	 *                   relationship template (defaults to false)
 	 * `emptyObjects`: boolean, wether to includ empty `attributes` and `relationships` lists; if this
 	 *                 is set to true, they will be included as empty objects / arrays (defaults to false)
 	 * `newLine`: boolean, if `true` format object data using new line (default: `true`)
@@ -420,6 +444,8 @@ class Model {
 			attributeNames: options.attributeNames,
 			relationshipSources: options.relationshipSources,
 			ownershipAlias: options.ownershipAlias,
+			ownershipName: options.ownershipName,
+			ownershipChain: options.ownershipChain,
 			emptyObjects: options.emptyObjects
 		};
 
