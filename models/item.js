@@ -8,7 +8,7 @@ module.exports = {
 	},
 	ownership: {
 		target: "user",
-		type: Relationship.ONE_TO_MANY
+		type: Relationship.MANY_TO_ONE
 	},
 	attributes: {
 		name: {

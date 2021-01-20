@@ -5,7 +5,7 @@ module.exports = {
 	name: "resource",
 	ownership: {
 		target: "user",
-		type: Relationship.MANY_TO_MANY
+		type: Relationship.MANY_TO_ONE
 	},
 	id: {
 		type: Types.UUID()
