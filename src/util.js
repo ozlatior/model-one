@@ -1,3 +1,7 @@
+/*
+ * Utility functions
+ */
+
 const indentationArray = function (ind, depth) {
 	if (depth === undefined)
 		depth = 10;
