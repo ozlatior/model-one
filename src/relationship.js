@@ -156,6 +156,15 @@ class Relationship {
 	}
 
 	/*
+	 * Get either forward or reverse relationship, depending on the direction of this relationship
+	 */
+	getMirrorRelationship () {
+		if (this.forward)
+			return this.forward;
+		return this.reverse;
+	}
+
+	/*
 	 * Check that this is a forward relationship
 	 */
 	isForward () {
