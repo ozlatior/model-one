@@ -35,6 +35,26 @@ class ModelOne {
 	}
 
 	/*
+	 * Normalizing internal method for getting a member model
+	 * `model`: string or Model object, model to retrieve
+	 * Returns: Model object: if the argument is `string`, the method looks up the model and returns
+	 * it if found. If the argument is a model object, the method checks if it's a member of the
+	 * environment before returning it.
+	 */
+	_getMemberModel (model) {
+		if (!model)
+			throw new ModelOneError("Missing model argument");
+		if (typeof(model) === "string") {
+			model = this.models[model];
+			if (!model)
+				throw new ModelOneError("No such model `" + model + "'");
+		}
+		if (!this.isMemberModel(model))
+			throw new ModelOneError("Model is not part of this environment");
+		return model;
+	}
+
+	/*
 	 * Load model object into this environment
 	 * `model`: Model object, model to load
 	 * `noUpdate`: boolean, if this is set to true no updates will be performed on relationships
@@ -223,6 +243,30 @@ class ModelOne {
 			ret.push(relationship);
 		});
 		return ret;
+	}
+
+	/*
+	 * Retrieve a model by name or null if model not found
+	 * `name`: string, model name to look for
+	 * Returns: Model object, the model if found or null otherwise
+	 */
+	getModelByName (name) {
+		let ret = this.models[name];
+		if (ret)
+			return ret;
+		return null;
+	}
+
+	/*
+	 * Check that a model belongs to this environment
+	 * `model`: Model object, model to check
+	 * Returns: boolean, true if model is found in environment, false otherwise
+	 */
+	isMemberModel (model) {
+		for (let i in this.models)
+			if (this.models[i] === model)
+				return true;
+		return false;
 	}
 
 	/*
@@ -604,6 +648,240 @@ class ModelOne {
 		if (res)
 			throw new ModelOneError(
 				"Model incomplete. Found " + res + " unlinked models. Call getUnlinkedModels() for details");
+	}
+
+	/*
+	 * Get connected (contiguous) domains
+	 *
+	 * A contiguous domain is a subset of the entity models that have relationship paths to one-another
+	 *
+	 * Returns: array of arrays of Model objects, entity models grouped by connectivity
+	 */
+	getConnectedDomains () {
+		let ret = [];
+		let visited = [];
+		for (let i in this.models) {
+			if (visited.indexOf(this.models[i]) !== -1)
+				continue;
+			let domain = this.getConnectedModels(this.models[i]);
+			ret.push(domain);
+			visited = visited.concat(domain);
+		}
+		return ret;
+	}
+
+	/*
+	 * Get connected (contiguous) domains model names
+	 *
+	 * A contiguous domain is a subset of the entity models that have relationship paths to one-another
+	 *
+	 * Returns: array of arrays of strings, entity model names grouped by connectivity
+	 */
+	getConnectedDomainNames () {
+		return this.getConnectedDomains().map((domain) => domain.map((model) => model.getName()));
+	}
+
+	/*
+	 * Get connected (contiguous) entities for a specific entity
+	 * `model`: Model object or string, the initial entity model for this operation
+	 *
+	 * A contiguous domain is a subset of the entity models that have relationship paths to one-another
+	 *
+	 * Returns: array of Model objects, entities connected to given entity
+	 */
+	getConnectedModels (model) {
+		model = this._getMemberModel(model);
+		let ret = [];
+		let queue = [ model ];
+		while (queue.length > 0) {
+			let next = queue.shift();
+			if (ret.indexOf(next) !== -1)
+				continue;
+			let neighbors = this.getNeighborModels(next);
+			ret.push(next);
+			queue = queue.concat(neighbors);
+		}
+		return ret;
+	}
+
+	/*
+	 * Get connected (contiguous) entity model names for a specific entity
+	 * `model`: Model object or string, the initial entity model for this operation
+	 *
+	 * A contiguous domain is a subset of the entity models that have relationship paths to one-another
+	 *
+	 * Returns: array of strings, names of entities connected to given entity
+	 */
+	getConnectedModelNames (model) {
+		return this.getConnectedModels(model).map((model) => model.getName());
+	}
+
+	/*
+	 * Get neighbor models
+	 * `model`: Model object or string, the initial entity model for this operation
+	 * Returns: array of Model objects, all entity models directly connected to given model
+	 */
+	getNeighborModels (model) {
+		model = this._getMemberModel(model);
+		let ret = [];
+		let rel = this.getRelationshipsBySourceReference(model);
+		for (let i=0; i<rel.length; i++)
+			ret.push(rel[i].getTarget());
+		return ret;
+	}
+
+	/*
+	 * Get neighbor model names
+	 * `model`: Model object or string, the initial entity model for this operation
+	 * Returns: array of strings, all entity model names directly connected to given model
+	 */
+	getNeighborModelNames (model) {
+		return this.getNeighborModels(model).map((model) => model.getName());
+	}
+
+	/*
+	 * Get neighbor model paths
+	 * `model`: Model object or string, the name of the initial entity model for this operation
+	 * `options`: object, options for this operation (optional)
+	 * - `depth`: number, maximum path depth (defaults to zero, unlimited)
+	 * - `fullObjects`: boolean, use full objects instead of names in returned paths (defaults to false)
+	 * `parentNode`: object, this will be set as parent node (optional, defaults to null)
+	 * Returns: array of objects, each containing
+	 * - `target`: string, neighboring model object name
+	 * - `many`: boolean, true if this is a one-to-many relationship
+	 * - `sourceAlias`: string, this model's name in the relationship
+	 * - `targetAlias`: string, other model's name in the relationship
+	 * - `direction`: string, `forward` or `reverse`
+	 * - `chain`: boolean, true if this is a chained relationship
+	 * - `relationshipName`: string, relationship name if one is defined
+	 */
+	getNeighborModelPaths (model, fullObjects) {
+		model = this._getMemberModel(model);
+		let rel = this.getRelationshipsBySourceReference(model);
+		return rel.map((r) => {
+			let ret = {
+				target: fullObjects ? r.getTarget() : r.getTargetName(),
+				many: r.getType() === Relationship.ONE_TO_MANY || r.getType() === Relationship.MANY_TO_MANY,
+				sourceAlias: r.getSourceAlias(),
+				targetAlias: r.getTargetAlias(),
+				direction: r.isForward() ? "forward" : "reverse",
+				chain: r.isChained()
+			};
+			if (r.getName())
+				ret.relationshipName = r.getName();
+			return ret;
+		});
+	}
+
+	/*
+	 * Get outgoing tree for model
+	 * `model`: Model object or string, the name of the initial entity model for this operation
+	 * `options`: object, options for this operation (optional)
+	 * - `depth`: number, maximum path depth (defaults to zero, unlimited)
+	 * - `fullObjects`: boolean, use full objects instead of names in returned paths (defaults to false)
+	 * `parentNode`: object, this will be set as parent node (optional, defaults to null)
+	 * Returns: tree of objects, each representing a relationship path starting with initial model; Path
+	 * elements are objects with fields:
+	 * - `prev`: parent tree element
+	 * - `next`: array of children objects
+	 * - `target`: object or string, neighboring model object or string
+	 * - `many`: boolean, true if this is a one-to-many relationship
+	 * - `sourceAlias`: string, this model's name in the relationship
+	 * - `targetAlias`: string, other model's name in the relationship
+	 * - `direction`: string, `forward` or `reverse`
+	 * - `chain`: boolean, true if this is a chained relationship
+	 * - `relationshipName`: string, relationship name if one is defined
+	 */
+	getOutgoingModelTree (model, options, parentNode) {
+		model = this._getMemberModel(model);
+		let ret = [];
+		let rel = this.getRelationshipsBySourceReference(model);
+		if (options === undefined)
+			options = {};
+		let fullObjects = options.fullObjects ? true : false;
+		let maxDepth = options.depth ? options.depth : 0;
+		let depth = parentNode && parentNode._depth ? parentNode._depth + 1 : 1;
+		for (let i=0; i<rel.length; i++) {
+			// check for loop condition (we are processing the same relationship or its reverse twice)
+			let looping = false;
+			let current = parentNode;
+			while (current) {
+				if (rel[i] === current._rel || rel[i] === current._rel.getMirrorRelationship()) {
+					looping = true;
+					break;
+				}
+				current = current.prev;
+			}
+			if (looping)
+				continue;
+			let toPush = {
+				_rel: rel[i],
+				_depth: depth,
+				prev: parentNode ? parentNode : null,
+				next: [],
+				target: fullObjects ? rel[i].getTarget() : rel[i].getTargetName(),
+				many: rel[i].getType() === Relationship.ONE_TO_MANY || rel[i].getType() === Relationship.MANY_TO_MANY,
+				sourceAlias: rel[i].getSourceAlias(),
+				targetAlias: rel[i].getTargetAlias(),
+				direction: rel[i].isForward() ? "forward" : "reverse",
+				chain: rel[i].isChained()
+			};
+			if (rel[i].getName())
+				toPush.relationshipName = rel[i].getName();
+			if (maxDepth === 0 || depth < maxDepth)
+				toPush.next = this.getOutgoingModelTree(rel[i].getTarget(), options, toPush);
+			delete toPush._rel;
+			delete toPush._depth;
+			ret.push(toPush);
+		}
+		return ret;
+	}
+
+	/*
+	 * Get outgoing paths for model
+	 * `model`: Model object or string, the name of the initial entity model for this operation
+	 * `options`: object, options for this operation (optional)
+	 * - `depth`: number, maximum path depth (defaults to zero, unlimited)
+	 * - `fullObjects`: boolean, use full objects instead of names in returned paths (defaults to false)
+	 * - `depthFirst`: boolean, go to the end of each branch first (defaults to true)
+	 * Returns: array of arrays, each representing a relationship path starting with initial model; Path
+	 * elements are objects with fields:
+	 * - `target`: object or string, neighboring model object or string
+	 * - `many`: boolean, true if this is a one-to-many relationship
+	 * - `sourceAlias`: string, this model's name in the relationship
+	 * - `targetAlias`: string, other model's name in the relationship
+	 * - `direction`: string, `forward` or `reverse`
+	 * - `chain`: boolean, true if this is a chained relationship
+	 * - `relationshipName`: string, relationship name if one is defined
+	 */
+	getOutgoingModelPaths (model, options) {
+		model = this._getMemberModel(model);
+		let ret = [];
+		let tree = this.getOutgoingModelTree(model, options);
+		// first make a list of all nodes in the tree
+		let nodes = [];
+		let queue = tree.slice(0);
+		let depthFirst = options && options.depthFirst !== undefined ? options.depthFirst : true;
+		while (queue.length) {
+			let node = queue.shift();
+			if (nodes.indexOf(node) === -1)
+				nodes.push(node);
+			if (depthFirst)
+				queue = node.next.slice(0).concat(queue);
+			else
+				queue = queue.concat(node.next);
+		}
+		// now, for each node run through the tree upwards and store all nodes in an array
+		for (let i=0; i<nodes.length; i++) {
+			let toPush = [];
+			let current = nodes[i];
+			while (current) {
+				toPush.unshift(current);
+				current = current.prev;
+			}
+			ret.push(toPush);
+		}
+		return ret;
 	}
 
 }
